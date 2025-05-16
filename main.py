@@ -1,6 +1,7 @@
 import pygame
 import os
 import random
+import math
 pygame.init()
 
 # Global Constants
@@ -25,8 +26,17 @@ BIRD = [pygame.image.load(os.path.join("Assets/Bird", "Bird1.png")),
         pygame.image.load(os.path.join("Assets/Bird", "Bird2.png"))]
 
 CLOUD = pygame.image.load(os.path.join("Assets/Other", "Cloud.png"))
+MOON = pygame.image.load(os.path.join("Assets/Other", "moon.png"))
+STARS = pygame.image.load(os.path.join("Assets/Other", "stars.png"))
+SUN = pygame.image.load(os.path.join("Assets/Other", "sun.png"))
 
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
+
+# Day-Night Cycle Constants
+DAY_COLOR = (255, 255, 255)  # White for day
+NIGHT_COLOR = (20, 20, 50)   # Dark blue for night
+CYCLE_LENGTH = 1000          # Points until a full day-night cycle
+HOURS_PER_CYCLE = 24         # 24 hours in a day
 
 
 class Dinosaur:
@@ -163,12 +173,171 @@ class Bird(Obstacle):
         self.index += 1
 
 
+class DayNightCycle:
+    def __init__(self):
+        self.cycle_position = 0  # 0 to 1 representing position in day/night cycle
+        self.start_hour = 6      # Start at 6 AM
+        self.moon_x = SCREEN_WIDTH // 4
+        self.moon_y = 100
+        self.stars_opacity = 0
+        
+    def update(self, points):
+        # Update cycle position based on points
+        self.cycle_position = (points % CYCLE_LENGTH) / CYCLE_LENGTH
+        
+    def get_current_color(self):
+        # Transition smoothly between day and night
+        # Use cosine function for smooth transition (noon is brightest, midnight is darkest)
+        brightness = (math.cos(2 * math.pi * self.cycle_position) + 1) / 2
+        
+        # Interpolate between night and day colors
+        r = int(NIGHT_COLOR[0] + (DAY_COLOR[0] - NIGHT_COLOR[0]) * brightness)
+        g = int(NIGHT_COLOR[1] + (DAY_COLOR[1] - NIGHT_COLOR[1]) * brightness)
+        b = int(NIGHT_COLOR[2] + (DAY_COLOR[2] - NIGHT_COLOR[2]) * brightness)
+        
+        return (r, g, b)
+    
+    def get_current_time(self):
+        # Calculate the current hour based on cycle position
+        current_hour = (self.start_hour + self.cycle_position * HOURS_PER_CYCLE) % HOURS_PER_CYCLE
+        hour = int(current_hour)
+        minute = int((current_hour - hour) * 60)
+        
+        # Return formatted time string
+        am_pm = "AM" if hour < 12 else "PM"
+        hour_12 = hour if hour <= 12 else hour - 12
+        if hour_12 == 0:
+            hour_12 = 12
+            
+        return f"{hour_12:02d}:{minute:02d} {am_pm}"
+    
+    def is_night(self):
+        # Return true if it's night time (6 PM to 6 AM)
+        current_hour = (self.start_hour + self.cycle_position * HOURS_PER_CYCLE) % HOURS_PER_CYCLE
+        return 18 <= current_hour or current_hour < 6
+    
+    def get_night_opacity(self):
+        # Calculate how "night" it is from 0 (day) to 1 (full night)
+        current_hour = (self.start_hour + self.cycle_position * HOURS_PER_CYCLE) % HOURS_PER_CYCLE
+        
+        # Sunrise transition: 5 AM to 7 AM
+        if 5 <= current_hour < 7:
+            return max(0, 1 - (current_hour - 5) / 2)
+        
+        # Sunset transition: 5 PM to 7 PM
+        elif 17 <= current_hour < 19:
+            return min(1, (current_hour - 17) / 2)
+        
+        # Full night: 7 PM to 5 AM
+        elif current_hour >= 19 or current_hour < 5:
+            return 1
+        
+        # Full day: 7 AM to 5 PM
+        else:
+            return 0
+    
+    def get_day_opacity(self):
+        # The inverse of night opacity - how "day" it is from 0 (night) to 1 (full day)
+        return 1 - self.get_night_opacity()
+    
+    def draw(self, SCREEN, font):
+        # Create a transparent overlay surface for the day/night effect
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        
+        # Get night and day opacity
+        night_opacity = self.get_night_opacity()
+        day_opacity = self.get_day_opacity()
+        
+        # Draw the sun during day
+        if day_opacity > 0:
+            # Sun is visible based on how bright it is
+            sun_alpha = int(255 * day_opacity)
+            sun_surface = SUN.copy()
+            sun_surface.set_alpha(sun_alpha)
+            
+            # Calculate sun position based on time (opposite to moon)
+            # Sun rises from left and sets to right
+            sun_angle = (self.cycle_position * 2 * math.pi) % (2 * math.pi)
+            sun_x = SCREEN_WIDTH * (0.5 + 0.4 * math.cos(sun_angle))
+            
+            # Position the sun higher in the sky to avoid interference with the dinosaur
+            # Keep it in the top portion of the screen
+            sun_y = 80 - 30 * math.sin(sun_angle)  # Reduced y-coordinate and amplitude
+            
+            # Only show sun when it's above the horizon
+            if math.sin(sun_angle) > -0.2:
+                # Scale the sun image to appropriate size
+                sun_size = max(64, min(96, 70 + 26 * math.sin(sun_angle)))  # Reduced size range
+                scaled_sun = pygame.transform.scale(sun_surface, (sun_size, sun_size))
+                
+                # Draw the sun in the background
+                SCREEN.blit(scaled_sun, (sun_x - scaled_sun.get_width()//2, 
+                                         sun_y - scaled_sun.get_height()//2))
+        
+        # Draw stars first when it's night
+        if night_opacity > 0:
+            # Make stars visible based on how dark it is
+            stars_alpha = int(255 * night_opacity)
+            # Create a copy of the stars image with appropriate alpha
+            stars_surface = STARS.copy()
+            # Apply transparency to stars
+            stars_surface.set_alpha(stars_alpha)
+            SCREEN.blit(stars_surface, (0, 0))
+            
+            # Draw moon when it's night
+            moon_alpha = int(255 * night_opacity)
+            moon_surface = MOON.copy()
+            moon_surface.set_alpha(moon_alpha)
+            
+            # Calculate moon position based on time
+            # Moon rises from right and sets to left
+            moon_angle = (self.cycle_position * 2 * math.pi + math.pi) % (2 * math.pi)  # Offset by π so moon rises at night
+            moon_x = SCREEN_WIDTH * (0.5 + 0.4 * math.cos(moon_angle))  # Moon moves horizontally across screen
+            
+            # Position the moon higher in the sky to avoid interference with the dinosaur
+            # Keep it in the top portion of the screen
+            moon_y = 80 - 30 * math.sin(moon_angle)  # Reduced y-coordinate and amplitude
+            
+            # Only show moon when it's above the horizon
+            if math.sin(moon_angle) > -0.2:  # Allow moon to be slightly below horizon before disappearing
+                # Scale the moon if needed to make it smaller
+                moon_size = moon_surface.get_width()
+                if moon_size > 80:  # If moon is too large
+                    scaled_moon = pygame.transform.scale(moon_surface, (80, 80))
+                    SCREEN.blit(scaled_moon, (moon_x - scaled_moon.get_width()//2, 
+                                            moon_y - scaled_moon.get_height()//2))
+                else:
+                    SCREEN.blit(moon_surface, (moon_x - moon_surface.get_width()//2, 
+                                            moon_y - moon_surface.get_height()//2))
+        
+        # Fill the overlay with night color based on opacity
+        day_night_alpha = int(125 * night_opacity)
+        overlay.fill((NIGHT_COLOR[0], NIGHT_COLOR[1], NIGHT_COLOR[2], day_night_alpha))
+        
+        # Draw the overlay
+        SCREEN.blit(overlay, (0, 0))
+        
+        # Draw clock at the top center
+        time_text = font.render(self.get_current_time(), True, (0, 0, 0))
+        time_rect = time_text.get_rect()
+        time_rect.center = (SCREEN_WIDTH // 2, 40)
+        
+        # Add a white background behind the clock to make it more readable
+        bg_rect = pygame.Rect(time_rect)
+        bg_rect.inflate_ip(20, 10)
+        pygame.draw.rect(SCREEN, (255, 255, 255), bg_rect, border_radius=10)
+        pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, 2, border_radius=10)
+        
+        SCREEN.blit(time_text, time_rect)
+
+
 def main():
     global game_speed, x_pos_bg, y_pos_bg, points, obstacles
     run = True
     clock = pygame.time.Clock()
     player = Dinosaur()
     cloud = Cloud()
+    day_night_cycle = DayNightCycle()
     game_speed = 20
     x_pos_bg = 0
     y_pos_bg = 380
@@ -203,7 +372,10 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        SCREEN.fill((255, 255, 255))
+        # Fill screen with day/night color instead of just white
+        bg_color = day_night_cycle.get_current_color()
+        SCREEN.fill(bg_color)
+        
         userInput = pygame.key.get_pressed()
 
         player.draw(SCREEN)
@@ -229,6 +401,10 @@ def main():
 
         cloud.draw(SCREEN)
         cloud.update()
+
+        # Update day/night cycle based on points
+        day_night_cycle.update(points)
+        day_night_cycle.draw(SCREEN, font)
 
         score()
 
