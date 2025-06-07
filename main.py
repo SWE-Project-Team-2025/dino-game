@@ -1,6 +1,7 @@
 import pygame
 import os
 import random
+from Shieldpowerup import ShieldPowerUp
 pygame.init()
 
 # Global Constants
@@ -50,6 +51,8 @@ class Dinosaur:
         self.dino_rect = self.image.get_rect()
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS
+        self.has_shield = False
+        self.shield_timer = 0  # counts down in frames or seconds
 
     def update(self, userInput):
         if self.dino_duck:
@@ -74,6 +77,8 @@ class Dinosaur:
             self.dino_duck = False
             self.dino_run = True
             self.dino_jump = False
+            # Call the shield update function here
+        self.update_shield()
 
     def duck(self):
         self.image = self.duck_img[self.step_index // 5]
@@ -100,7 +105,23 @@ class Dinosaur:
 
     def draw(self, SCREEN):
         SCREEN.blit(self.image, (self.dino_rect.x, self.dino_rect.y))
+    
+    def activate_shield(self, duration=500):  # duration could be in frames (~seconds at 30 FPS)
+        self.has_shield = True
+        self.shield_timer = duration
 
+    def update_shield(self):
+        if self.has_shield:
+            self.shield_timer -= 1
+            if self.shield_timer <= 0:
+                self.has_shield = False
+                self.shield_timer = 0
+
+    def draw_shield_indicator(self, SCREEN):
+        if self.has_shield:
+            # Example: draw a simple shield icon or circle around dino
+            pygame.draw.circle(SCREEN, (0, 0, 255), (self.dino_rect.centerx, self.dino_rect.centery), 40, 3)
+            # Or add a timer bar (optional)
 
 class Cloud:
     def __init__(self):
@@ -177,6 +198,16 @@ def main():
     obstacles = []
     death_count = 0
 
+    # Shield variables
+    shield_active = False
+    shield_duration = 300  # Duration in frames (e.g., 10 seconds if 30 FPS)
+    shield_timer = 0
+
+    # Load shield power-up image (add your shield image in Assets/Other folder)
+    SHIELD_IMG = pygame.image.load(os.path.join("Assets/Other", "Shield.png"))
+    shield_power_up = None  # No shield power-up on screen initially
+    shield_spawn_timer = 0  # Timer to spawn shield power-up occasionally
+
     def score():
         global points, game_speed
         points += 1
@@ -198,6 +229,13 @@ def main():
             x_pos_bg = 0
         x_pos_bg -= game_speed
 
+    def draw_shield_indicator():
+        # Draw a simple shield icon at top-left or near player
+        SCREEN.blit(SHIELD_IMG, (player.dino_rect.x, player.dino_rect.y - 40))
+        # Optional: Draw a timer bar or countdown text
+        timer_text = font.render(f"Shield: {shield_timer // 30}", True, (0, 0, 255))
+        SCREEN.blit(timer_text, (player.dino_rect.x, player.dino_rect.y - 60))
+
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -207,23 +245,69 @@ def main():
         userInput = pygame.key.get_pressed()
 
         player.draw(SCREEN)
+        player.draw_shield_indicator(SCREEN)
         player.update(userInput)
 
+        # Spawn obstacles if none present
         if len(obstacles) == 0:
-            if random.randint(0, 2) == 0:
+            choice = random.randint(0, 2)
+            if choice == 0:
                 obstacles.append(SmallCactus(SMALL_CACTUS))
-            elif random.randint(0, 2) == 1:
+            elif choice == 1:
                 obstacles.append(LargeCactus(LARGE_CACTUS))
-            elif random.randint(0, 2) == 2:
+            elif choice == 2:
                 obstacles.append(Bird(BIRD))
 
-        for obstacle in obstacles:
+        # Handle obstacles update and collision
+        for obstacle in obstacles[:]:  # Copy list to avoid issues while removing
             obstacle.draw(SCREEN)
             obstacle.update()
+
             if player.dino_rect.colliderect(obstacle.rect):
-                pygame.time.delay(2000)
-                death_count += 1
-                menu(death_count)
+                if shield_active:
+                    # Shield protects player once, remove obstacle and shield
+                    obstacles.remove(obstacle)
+                    shield_active = False
+                    shield_timer = 0
+                else:
+                    pygame.time.delay(2000)
+                    death_count += 1
+                    menu(death_count)
+
+        # Shield power-up spawn logic (every ~10-20 seconds)
+        shield_spawn_timer += 1
+        if shield_power_up is None and shield_spawn_timer > 300:
+            # Spawn shield somewhere on the right side randomly
+            shield_power_up = pygame.Rect(
+                SCREEN_WIDTH + random.randint(500, 1000),
+                random.randint(250, 350),
+                SHIELD_IMG.get_width(),
+                SHIELD_IMG.get_height()
+            )
+            shield_spawn_timer = 0
+
+        # Move shield power-up left with game speed
+        if shield_power_up:
+            shield_power_up.x -= game_speed
+            SCREEN.blit(SHIELD_IMG, (shield_power_up.x, shield_power_up.y))
+
+            # Check collision with player to collect shield
+            if player.dino_rect.colliderect(shield_power_up) and not shield_active:
+                shield_active = True
+                shield_timer = shield_duration
+                shield_power_up = None  # Remove shield power-up from screen
+
+            # Remove shield power-up if it goes off screen
+            if shield_power_up and shield_power_up.x < -SHIELD_IMG.get_width():
+                shield_power_up = None
+
+        # Update shield timer and disable shield if expired
+        if shield_active:
+            shield_timer -= 1
+            draw_shield_indicator()
+            if shield_timer <= 0:
+                shield_active = False
+                shield_timer = 0
 
         background()
 
@@ -234,6 +318,7 @@ def main():
 
         clock.tick(30)
         pygame.display.update()
+
 
 
 def menu(death_count):
