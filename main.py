@@ -2,6 +2,12 @@ import pygame
 import os
 import random
 pygame.init()
+pygame.mixer.init()  # Ses sistemini başlatır
+# Load Sound Effects
+JUMP_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\jump.wav")
+COLLISION_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\collision.wav")
+SCORE_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\score.wav")
+
 
 # Global Constants
 SCREEN_HEIGHT = 600
@@ -92,6 +98,7 @@ class Dinosaur:
     def jump(self):
         self.image = self.jump_img
         if self.dino_jump:
+            JUMP_SOUND.play()
             self.dino_rect.y -= self.jump_vel * 4
             self.jump_vel -= 0.8
         if self.jump_vel < - self.JUMP_VEL:
@@ -182,6 +189,9 @@ def main():
         points += 1
         if points % 100 == 0:
             game_speed += 1
+        if points % 100 == 0:  # Örnek: her 100 puanda bir ses çal
+            SCORE_SOUND.play()
+
 
         text = font.render("Points: " + str(points), True, (0, 0, 0))
         textRect = text.get_rect()
@@ -220,7 +230,9 @@ def main():
         for obstacle in obstacles:
             obstacle.draw(SCREEN)
             obstacle.update()
+           
             if player.dino_rect.colliderect(obstacle.rect):
+                COLLISION_SOUND.play() #çarpma sesi
                 pygame.time.delay(2000)
                 death_count += 1
                 menu(death_count)
