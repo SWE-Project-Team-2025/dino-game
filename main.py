@@ -3,10 +3,18 @@ import os
 import random
 pygame.init()
 pygame.mixer.init()  # Ses sistemini başlatır
+pygame.mixer.set_num_channels(3)  # 3 farklı kanal: jump, collision, score
+
 # Load Sound Effects
 JUMP_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\jump.wav")
+JUMP_SOUND.set_volume(0.5)  # Zıplama sesi: orta ses düzeyi
 COLLISION_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\collision.wav")
+COLLISION_SOUND.set_volume(0.7)  # Çarpma sesi: biraz daha yüksek
 SCORE_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\score.wav")
+SCORE_SOUND.set_volume(0.3)  # Puan sesi: hafif ve melodik
+JUMP_CHANNEL = pygame.mixer.Channel(0)
+COLLISION_CHANNEL = pygame.mixer.Channel(1)
+SCORE_CHANNEL = pygame.mixer.Channel(2)
 
 
 # Global Constants
@@ -72,6 +80,7 @@ class Dinosaur:
             self.dino_duck = False
             self.dino_run = False
             self.dino_jump = True
+            JUMP_CHANNEL.play(JUMP_SOUND)  #  Sadece zıplama başladığında ses çalsın
         elif userInput[pygame.K_DOWN] and not self.dino_jump:
             self.dino_duck = True
             self.dino_run = False
@@ -98,7 +107,7 @@ class Dinosaur:
     def jump(self):
         self.image = self.jump_img
         if self.dino_jump:
-            JUMP_SOUND.play()
+        
             self.dino_rect.y -= self.jump_vel * 4
             self.jump_vel -= 0.8
         if self.jump_vel < - self.JUMP_VEL:
@@ -190,7 +199,8 @@ def main():
         if points % 100 == 0:
             game_speed += 1
         if points % 100 == 0:  # Örnek: her 100 puanda bir ses çal
-            SCORE_SOUND.play()
+            SCORE_CHANNEL.play(SCORE_SOUND)
+
 
 
         text = font.render("Points: " + str(points), True, (0, 0, 0))
@@ -232,7 +242,7 @@ def main():
             obstacle.update()
            
             if player.dino_rect.colliderect(obstacle.rect):
-                COLLISION_SOUND.play() #çarpma sesi
+                COLLISION_CHANNEL.play(COLLISION_SOUND) #çarpma sesi
                 pygame.time.delay(2000)
                 death_count += 1
                 menu(death_count)
