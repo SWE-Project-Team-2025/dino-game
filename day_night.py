@@ -10,7 +10,6 @@ HOURS_PER_CYCLE = 24         # 24 hours in a day
 
 # Load assets for day/night
 MOON = pygame.image.load(os.path.join("Assets/Other", "moon.png"))
-STARS = pygame.image.load(os.path.join("Assets/Other", "stars.png"))
 SUN = pygame.image.load(os.path.join("Assets/Other", "sun.png"))
 
 
@@ -113,9 +112,6 @@ class DayNightEnvironment:
         
         # Draw the overlay
         screen.blit(overlay, (0, 0))
-        
-        # Draw clock at the top center
-        self._draw_clock(screen, font)
     
     def _draw_sun(self, screen, day_opacity):
         # Sun is visible based on how bright it is
@@ -143,14 +139,6 @@ class DayNightEnvironment:
                                      sun_y - scaled_sun.get_height()//2))
     
     def _draw_night_objects(self, screen, night_opacity):
-        # Make stars visible based on how dark it is
-        stars_alpha = int(255 * night_opacity)
-        # Create a copy of the stars image with appropriate alpha
-        stars_surface = STARS.copy()
-        # Apply transparency to stars
-        stars_surface.set_alpha(stars_alpha)
-        screen.blit(stars_surface, (0, 0))
-        
         # Draw moon when it's night
         moon_alpha = int(255 * night_opacity)
         moon_surface = MOON.copy()
@@ -176,16 +164,3 @@ class DayNightEnvironment:
             else:
                 screen.blit(moon_surface, (moon_x - moon_surface.get_width()//2, 
                                         moon_y - moon_surface.get_height()//2))
-    
-    def _draw_clock(self, screen, font):
-        time_text = font.render(self.cycle.get_current_time(), True, (0, 0, 0))
-        time_rect = time_text.get_rect()
-        time_rect.center = (self.screen_width // 2, 40)
-        
-        # Add a white background behind the clock to make it more readable
-        bg_rect = pygame.Rect(time_rect)
-        bg_rect.inflate_ip(20, 10)
-        pygame.draw.rect(screen, (255, 255, 255), bg_rect, border_radius=10)
-        pygame.draw.rect(screen, (0, 0, 0), bg_rect, 2, border_radius=10)
-        
-        screen.blit(time_text, time_rect) 
