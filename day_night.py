@@ -33,6 +33,14 @@ class DayNightCycle:
         b = int(NIGHT_COLOR[2] + (DAY_COLOR[2] - NIGHT_COLOR[2]) * brightness)
         
         return (r, g, b)
+
+    def get_text_color(self):
+        # calculate text color based on brightness, and then opposite of that
+        brightness = (math.cos(2 * math.pi * self.cycle_position) + 1) / 2
+        r = int(NIGHT_COLOR[0] + (DAY_COLOR[0] - NIGHT_COLOR[0]) * brightness)
+        g = int(NIGHT_COLOR[1] + (DAY_COLOR[1] - NIGHT_COLOR[1]) * brightness)
+        b = int(NIGHT_COLOR[2] + (DAY_COLOR[2] - NIGHT_COLOR[2]) * brightness)
+        return (255 - r, 255 - g, 255 - b)
     
     def is_night(self):
         # Return true if it's night time (6 PM to 6 AM)
