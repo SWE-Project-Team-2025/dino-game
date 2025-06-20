@@ -1,30 +1,55 @@
-import pygame
 import os
 import random
 import math
 from day_night import DayNightEnvironment
+import pygame
+
 pygame.init()
+pygame.mixer.init()  # Ses sistemini başlatır
+pygame.mixer.set_num_channels(3)  # 3 farklı kanal: jump, collision, score
+
+# Load Sound Effects
+JUMP_SOUND = pygame.mixer.Sound("Assets/Sound/jump.wav")
+JUMP_SOUND.set_volume(0.5)  # Zıplama sesi: orta ses düzeyi
+COLLISION_SOUND = pygame.mixer.Sound("Assets/Sound/collision.wav")
+COLLISION_SOUND.set_volume(0.7)  # Çarpma sesi: biraz daha yüksek
+SCORE_SOUND = pygame.mixer.Sound("Assets/Sound/score.wav")
+SCORE_SOUND.set_volume(0.3)  # Puan sesi: hafif ve melodik
+JUMP_CHANNEL = pygame.mixer.Channel(0)
+COLLISION_CHANNEL = pygame.mixer.Channel(1)
+SCORE_CHANNEL = pygame.mixer.Channel(2)
+
 
 # Global Constants
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 1100
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-RUNNING = [pygame.image.load(os.path.join("Assets/Dino", "DinoRun1.png")),
-           pygame.image.load(os.path.join("Assets/Dino", "DinoRun2.png"))]
+RUNNING = [
+    pygame.image.load(os.path.join("Assets/Dino", "DinoRun1.png")),
+    pygame.image.load(os.path.join("Assets/Dino", "DinoRun2.png")),
+]
 JUMPING = pygame.image.load(os.path.join("Assets/Dino", "DinoJump.png"))
-DUCKING = [pygame.image.load(os.path.join("Assets/Dino", "DinoDuck1.png")),
-           pygame.image.load(os.path.join("Assets/Dino", "DinoDuck2.png"))]
+DUCKING = [
+    pygame.image.load(os.path.join("Assets/Dino", "DinoDuck1.png")),
+    pygame.image.load(os.path.join("Assets/Dino", "DinoDuck2.png")),
+]
 
-SMALL_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus1.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus2.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus3.png"))]
-LARGE_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus1.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus2.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus3.png"))]
+SMALL_CACTUS = [
+    pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus1.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus2.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus3.png")),
+]
+LARGE_CACTUS = [
+    pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus1.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus2.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus3.png")),
+]
 
-BIRD = [pygame.image.load(os.path.join("Assets/Bird", "Bird1.png")),
-        pygame.image.load(os.path.join("Assets/Bird", "Bird2.png"))]
+BIRD = [
+    pygame.image.load(os.path.join("Assets/Bird", "Bird1.png")),
+    pygame.image.load(os.path.join("Assets/Bird", "Bird2.png")),
+]
 
 CLOUD = pygame.image.load(os.path.join("Assets/Other", "Cloud.png"))
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
@@ -67,6 +92,7 @@ class Dinosaur:
             self.dino_duck = False
             self.dino_run = False
             self.dino_jump = True
+            JUMP_CHANNEL.play(JUMP_SOUND)  #  Sadece zıplama başladığında ses çalsın
         elif userInput[pygame.K_DOWN] and not self.dino_jump:
             self.dino_duck = True
             self.dino_run = False
@@ -93,9 +119,10 @@ class Dinosaur:
     def jump(self):
         self.image = self.jump_img
         if self.dino_jump:
+        
             self.dino_rect.y -= self.jump_vel * 4
             self.jump_vel -= 0.8
-        if self.jump_vel < - self.JUMP_VEL:
+        if self.jump_vel < -self.JUMP_VEL:
             self.dino_jump = False
             self.jump_vel = self.JUMP_VEL
 
@@ -160,7 +187,7 @@ class Bird(Obstacle):
     def draw(self, SCREEN):
         if self.index >= 9:
             self.index = 0
-        SCREEN.blit(self.image[self.index//5], self.rect)
+        SCREEN.blit(self.image[self.index // 5], self.rect)
         self.index += 1
 
 
@@ -175,7 +202,7 @@ def main():
     x_pos_bg = 0
     y_pos_bg = 380
     points = 0
-    font = pygame.font.Font('freesansbold.ttf', 20)
+    font = pygame.font.Font("freesansbold.ttf", 20)
     obstacles = []
     death_count = 0
 
@@ -184,6 +211,10 @@ def main():
         points += 1
         if points % 100 == 0:
             game_speed += 1
+        if points % 100 == 0:  # Örnek: her 100 puanda bir ses çal
+            SCORE_CHANNEL.play(SCORE_SOUND)
+
+
 
         text = font.render("Points: " + str(points), True, (0, 0, 0))
         textRect = text.get_rect()
@@ -228,7 +259,9 @@ def main():
         for obstacle in obstacles:
             obstacle.draw(SCREEN)
             obstacle.update()
+           
             if player.dino_rect.colliderect(obstacle.rect):
+                COLLISION_CHANNEL.play(COLLISION_SOUND) #çarpma sesi
                 pygame.time.delay(2000)
                 death_count += 1
                 menu(death_count)
@@ -252,7 +285,7 @@ def menu(death_count):
     run = True
     while run:
         SCREEN.fill((255, 255, 255))
-        font = pygame.font.Font('freesansbold.ttf', 30)
+        font = pygame.font.Font("freesansbold.ttf", 30)
 
         if death_count == 0:
             text = font.render("Press any Key to Start", True, (0, 0, 0))
