@@ -4,7 +4,14 @@ import random
 import pygame
 
 from day_night import DayNightEnvironment
-from Shieldpowerup import ShieldPowerUp
+from power_ups import (
+    ShieldPowerUp,
+    ScoreMultiplier,
+    PowerUpState,
+    PowerUpManager,
+    SHIELD_DURATION,
+    MULTIPLIER_DURATION,
+)
 
 pygame.init()
 pygame.mixer.init()  # Ses sistemini başlatır
@@ -21,6 +28,9 @@ JUMP_CHANNEL = pygame.mixer.Channel(0)
 COLLISION_CHANNEL = pygame.mixer.Channel(1)
 SCORE_CHANNEL = pygame.mixer.Channel(2)
 
+
+# Game Configuration
+TESTING_MODE = False  # Set to False for production
 
 # Global Constants
 SCREEN_HEIGHT = 600
@@ -78,8 +88,7 @@ class Dinosaur:
         self.dino_rect = self.image.get_rect()
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS
-        self.has_shield = False
-        self.shield_timer = 0  # counts down in frames or seconds
+        self.power_up_state = PowerUpState()
 
     def update(self, userInput):
         if self.dino_duck:
@@ -105,8 +114,8 @@ class Dinosaur:
             self.dino_duck = False
             self.dino_run = True
             self.dino_jump = False
-            # Call the shield update function here
-        self.update_shield()
+
+        self.power_up_state.update()
 
     def duck(self):
         self.image = self.duck_img[self.step_index // 5]
@@ -134,31 +143,6 @@ class Dinosaur:
 
     def draw(self, SCREEN):
         SCREEN.blit(self.image, (self.dino_rect.x, self.dino_rect.y))
-
-    def activate_shield(
-        self, duration=500
-    ):  # duration could be in frames (~seconds at 30 FPS)
-        self.has_shield = True
-        self.shield_timer = duration
-
-    def update_shield(self):
-        if self.has_shield:
-            self.shield_timer -= 1
-            if self.shield_timer <= 0:
-                self.has_shield = False
-                self.shield_timer = 0
-
-    def draw_shield_indicator(self, SCREEN):
-        if self.has_shield:
-            # Example: draw a simple shield icon or circle around dino
-            pygame.draw.circle(
-                SCREEN,
-                (0, 0, 255),
-                (self.dino_rect.centerx, self.dino_rect.centery),
-                40,
-                3,
-            )
-            # Or add a timer bar (optional)
 
 
 class Cloud:
@@ -229,6 +213,9 @@ def main():
     player = Dinosaur()
     cloud = Cloud()
     environment = DayNightEnvironment(SCREEN_WIDTH, SCREEN_HEIGHT)
+    power_up_manager = PowerUpManager(
+        testing_mode=TESTING_MODE, screen_width=SCREEN_WIDTH
+    )
     game_speed = 20
     x_pos_bg = 0
     y_pos_bg = 380
@@ -236,23 +223,14 @@ def main():
     font = pygame.font.Font("freesansbold.ttf", 20)
     obstacles = []
     death_count = 0
-
-    # Shield variables
-    shield_active = False
-    shield_duration = 300  # Duration in frames (e.g., 10 seconds if 30 FPS)
-    shield_timer = 0
-
-    # Load shield power-up image (add your shield image in Assets/Other folder)
-    SHIELD_IMG = pygame.image.load(os.path.join("Assets/Other", "Shield.png"))
-    shield_power_up = None  # No shield power-up on screen initially
-    shield_spawn_timer = 0  # Timer to spawn shield power-up occasionally
+    enable_powerups = True  # Set to False to disable powerups for testing
 
     def score():
         global points, game_speed
-        points += 1
+        points += player.power_up_state.score_multiplier
         if points % 100 == 0:
             game_speed += 1
-        if points % 100 == 0:  # Örnek: her 100 puanda bir ses çal
+        if points % 100 == 0:
             SCORE_CHANNEL.play(SCORE_SOUND)
 
         text = font.render(
@@ -261,6 +239,32 @@ def main():
         textRect = text.get_rect()
         textRect.center = (1000, 40)
         SCREEN.blit(text, textRect)
+
+        if player.power_up_state.has_shield:
+            shield_text = font.render(
+                f"Shield: {player.power_up_state.shield_timer // 30}s",
+                True,
+                (0, 0, 255),
+            )
+            shield_text_rect = shield_text.get_rect()
+            shield_text_rect.topleft = (textRect.left, textRect.bottom + 10)
+            SCREEN.blit(shield_text, shield_text_rect)
+
+        if player.power_up_state.score_multiplier > 1:
+            multiplier_text = font.render(
+                f"{player.power_up_state.score_multiplier}x Score: {player.power_up_state.multiplier_timer // 30}s",
+                True,
+                (255, 0, 0),
+            )
+            multiplier_text_rect = multiplier_text.get_rect()
+            if player.power_up_state.has_shield:
+                multiplier_text_rect.topleft = (
+                    shield_text_rect.left,
+                    shield_text_rect.bottom + 10,
+                )
+            else:
+                multiplier_text_rect.topleft = (textRect.left, textRect.bottom + 10)
+            SCREEN.blit(multiplier_text, multiplier_text_rect)
 
     def background():
         global x_pos_bg, y_pos_bg
@@ -271,13 +275,6 @@ def main():
             SCREEN.blit(BG, (image_width + x_pos_bg, y_pos_bg))
             x_pos_bg = 0
         x_pos_bg -= game_speed
-
-    def draw_shield_indicator():
-        # Draw a simple shield icon at top-left or near player
-        SCREEN.blit(SHIELD_IMG, (player.dino_rect.x, player.dino_rect.y - 40))
-        # Optional: Draw a timer bar or countdown text
-        timer_text = font.render(f"Shield: {shield_timer // 30}", True, (0, 0, 255))
-        SCREEN.blit(timer_text, (player.dino_rect.x, player.dino_rect.y - 60))
 
     while run:
         for event in pygame.event.get():
@@ -294,7 +291,7 @@ def main():
         userInput = pygame.key.get_pressed()
 
         player.draw(SCREEN)
-        player.draw_shield_indicator(SCREEN)
+        player.power_up_state.draw_powerup_indicators(SCREEN, player.dino_rect)
         player.update(userInput)
 
         # Spawn obstacles if none present
@@ -313,51 +310,26 @@ def main():
             obstacle.update()
 
             if player.dino_rect.colliderect(obstacle.rect):
-                COLLISION_CHANNEL.play(COLLISION_SOUND)  # Hit sound
-                if shield_active:
-                    # Shield protects player once, remove obstacle and shield
+                if player.power_up_state.has_shield:
+                    player.power_up_state.has_shield = False
                     obstacles.remove(obstacle)
-                    shield_active = False
-                    shield_timer = 0
                 else:
+                    COLLISION_CHANNEL.play(COLLISION_SOUND)
                     pygame.time.delay(2000)
                     death_count += 1
                     menu(death_count)
 
-        # Shield power-up spawn logic (every ~10-20 seconds)
-        shield_spawn_timer += 1
-        if shield_power_up is None and shield_spawn_timer > 300:
-            # Spawn shield somewhere on the right side randomly
-            shield_power_up = pygame.Rect(
-                SCREEN_WIDTH + random.randint(500, 1000),
-                random.randint(250, 350),
-                SHIELD_IMG.get_width(),
-                SHIELD_IMG.get_height(),
-            )
-            shield_spawn_timer = 0
+        if enable_powerups:
+            power_up_manager.update(game_speed, obstacles)
+            power_up_manager.draw_all(SCREEN)
 
-        # Move shield power-up left with game speed
-        if shield_power_up:
-            shield_power_up.x -= game_speed
-            SCREEN.blit(SHIELD_IMG, (shield_power_up.x, shield_power_up.y))
-
-            # Check collision with player to collect shield
-            if player.dino_rect.colliderect(shield_power_up) and not shield_active:
-                shield_active = True
-                shield_timer = shield_duration
-                shield_power_up = None  # Remove shield power-up from screen
-
-            # Remove shield power-up if it goes off screen
-            if shield_power_up and shield_power_up.x < -SHIELD_IMG.get_width():
-                shield_power_up = None
-
-        # Update shield timer and disable shield if expired
-        if shield_active:
-            shield_timer -= 1
-            draw_shield_indicator()
-            if shield_timer <= 0:
-                shield_active = False
-                shield_timer = 0
+            # Check for power-up collisions
+            collected_power_ups = power_up_manager.check_collisions(player.dino_rect)
+            for power_up in collected_power_ups:
+                if power_up.type == "shield":
+                    player.power_up_state.activate_shield()
+                elif power_up.type == "multiplier":
+                    player.power_up_state.activate_multiplier()
 
         background()
 
@@ -397,6 +369,7 @@ def menu(death_count):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 run = False
+                exit()
             if event.type == pygame.KEYDOWN:
                 main()
 
