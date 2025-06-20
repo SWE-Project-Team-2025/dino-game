@@ -4,7 +4,6 @@ import random
 import pygame
 
 from day_night import DayNightEnvironment
-from Shieldpowerup import ShieldPowerUp
 
 pygame.init()
 pygame.mixer.init()  # Ses sistemini başlatır
