@@ -78,6 +78,8 @@ class Dinosaur:
         self.dino_rect = self.image.get_rect()
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS
+        self.collision_rect = self.dino_rect.inflate(-50, -50)
+
         self.has_shield = False
         self.shield_timer = 0  # counts down in frames or seconds
 
@@ -88,6 +90,7 @@ class Dinosaur:
             self.run()
         if self.dino_jump:
             self.jump()
+        self.collision_rect = self.dino_rect.inflate(-50, -50)
 
         if self.step_index >= 10:
             self.step_index = 0
@@ -179,14 +182,18 @@ class Cloud:
 
 
 class Obstacle:
-    def __init__(self, image, type):
+    def __init__(self, image, type, y_pos):
         self.image = image
         self.type = type
         self.rect = self.image[self.type].get_rect()
         self.rect.x = SCREEN_WIDTH
+        self.rect.y = y_pos
+
+        self.collision_rect = self.rect.inflate(-45, -45)
 
     def update(self):
         self.rect.x -= game_speed
+        self.collision_rect.x -= game_speed
         if self.rect.x < -self.rect.width:
             obstacles.pop()
 
@@ -197,22 +204,20 @@ class Obstacle:
 class SmallCactus(Obstacle):
     def __init__(self, image):
         self.type = random.randint(0, 2)
-        super().__init__(image, self.type)
-        self.rect.y = 325
+        super().__init__(image, self.type, 325)
 
 
 class LargeCactus(Obstacle):
     def __init__(self, image):
         self.type = random.randint(0, 2)
-        super().__init__(image, self.type)
-        self.rect.y = 300
+        super().__init__(image, self.type, 300)
 
 
 class Bird(Obstacle):
     def __init__(self, image):
         self.type = 0
-        super().__init__(image, self.type)
-        self.rect.y = 250
+        super().__init__(image, self.type, 250)
+        self.collision_rect = self.rect.inflate(-30, -20)
         self.index = 0
 
     def draw(self, SCREEN):
@@ -313,7 +318,7 @@ def main():
             obstacle.draw(SCREEN)
             obstacle.update()
 
-            if player.dino_rect.colliderect(obstacle.rect):
+            if player.collision_rect.colliderect(obstacle.collision_rect):
                 COLLISION_CHANNEL.play(COLLISION_SOUND)  # Hit sound
                 if shield_active:
                     # Shield protects player once, remove obstacle and shield
