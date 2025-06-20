@@ -6,7 +6,7 @@ import pygame
 # Day-Night Cycle Constants
 DAY_COLOR = (255, 255, 255)  # White for day
 NIGHT_COLOR = (20, 20, 50)  # Dark blue for night
-CYCLE_LENGTH = 1000  # Points until a full day-night cycle
+CYCLE_LENGTH = 1400  # Points until a full day-night cycle
 HOURS_PER_CYCLE = 24  # 24 hours in a day
 
 # Load assets for day/night
@@ -21,7 +21,9 @@ class DayNightCycle:
 
     def update(self, points):
         # Update cycle position based on points
-        self.cycle_position = (points % CYCLE_LENGTH) / CYCLE_LENGTH
+        if points % (CYCLE_LENGTH / 2) == 0 and points != 0:
+            self.cycle_position = (points % CYCLE_LENGTH) / CYCLE_LENGTH
+        self.cycle_movement = (points % CYCLE_LENGTH) / CYCLE_LENGTH
 
     def get_current_color(self):
         # Transition smoothly between day and night
@@ -90,10 +92,6 @@ class DayNightEnvironment:
         return self.cycle.get_current_color()
 
     def draw(self, screen, font):
-        # Create a transparent overlay surface for the day/night effect
-        overlay = pygame.Surface(
-            (self.screen_width, self.screen_height), pygame.SRCALPHA
-        )
 
         # Get night and day opacity
         night_opacity = self.cycle.get_night_opacity()
@@ -107,13 +105,6 @@ class DayNightEnvironment:
         if night_opacity > 0:
             self._draw_night_objects(screen, night_opacity)
 
-        # Fill the overlay with night color based on opacity
-        day_night_alpha = int(125 * night_opacity)
-        overlay.fill((NIGHT_COLOR[0], NIGHT_COLOR[1], NIGHT_COLOR[2], day_night_alpha))
-
-        # Draw the overlay
-        screen.blit(overlay, (0, 0))
-
     def _draw_sun(self, screen, day_opacity):
         # Sun is visible based on how bright it is
         sun_alpha = int(255 * day_opacity)
@@ -122,7 +113,7 @@ class DayNightEnvironment:
 
         # Calculate sun position based on time (opposite to moon)
         # Sun rises from left and sets to right
-        sun_angle = (self.cycle.cycle_position * 2 * math.pi) % (2 * math.pi)
+        sun_angle = (self.cycle.cycle_movement * 2 * math.pi) % (2 * math.pi)
         sun_x = self.screen_width * (0.5 + 0.4 * math.cos(sun_angle))
 
         # Position the sun higher in the sky to avoid interference with the dinosaur
@@ -153,7 +144,7 @@ class DayNightEnvironment:
 
         # Calculate moon position based on time
         # Moon rises from right and sets to left
-        moon_angle = (self.cycle.cycle_position * 2 * math.pi + math.pi) % (
+        moon_angle = (self.cycle.cycle_movement * 2 * math.pi + math.pi) % (
             2 * math.pi
         )  # Offset by π so moon rises at night
         # Moon moves horizontally across screen
