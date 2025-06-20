@@ -6,7 +6,7 @@ import pygame
 # Day-Night Cycle Constants
 DAY_COLOR = (255, 255, 255)  # White for day
 NIGHT_COLOR = (20, 20, 50)  # Dark blue for night
-CYCLE_LENGTH = 1000  # Points until a full day-night cycle
+CYCLE_LENGTH = 3000  # Points until a full day-night cycle
 HOURS_PER_CYCLE = 24  # 24 hours in a day
 
 # Load assets for day/night
