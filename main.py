@@ -1,9 +1,10 @@
 import os
 import random
-from Shieldpowerup import ShieldPowerUp
-import math
-from day_night import DayNightEnvironment
+
 import pygame
+
+from day_night import DayNightEnvironment
+from Shieldpowerup import ShieldPowerUp
 
 pygame.init()
 pygame.mixer.init()  # Ses sistemini başlatır
@@ -95,7 +96,7 @@ class Dinosaur:
             self.dino_duck = False
             self.dino_run = False
             self.dino_jump = True
-            JUMP_CHANNEL.play(JUMP_SOUND)  #  Sadece zıplama başladığında ses çalsın
+            JUMP_CHANNEL.play(JUMP_SOUND)  # Sadece zıplama başladığında ses çalsın
         elif userInput[pygame.K_DOWN] and not self.dino_jump:
             self.dino_duck = True
             self.dino_run = False
@@ -124,7 +125,7 @@ class Dinosaur:
     def jump(self):
         self.image = self.jump_img
         if self.dino_jump:
-        
+
             self.dino_rect.y -= self.jump_vel * 4
             self.jump_vel -= 0.8
         if self.jump_vel < -self.JUMP_VEL:
@@ -133,8 +134,10 @@ class Dinosaur:
 
     def draw(self, SCREEN):
         SCREEN.blit(self.image, (self.dino_rect.x, self.dino_rect.y))
-    
-    def activate_shield(self, duration=500):  # duration could be in frames (~seconds at 30 FPS)
+
+    def activate_shield(
+        self, duration=500
+    ):  # duration could be in frames (~seconds at 30 FPS)
         self.has_shield = True
         self.shield_timer = duration
 
@@ -148,8 +151,15 @@ class Dinosaur:
     def draw_shield_indicator(self, SCREEN):
         if self.has_shield:
             # Example: draw a simple shield icon or circle around dino
-            pygame.draw.circle(SCREEN, (0, 0, 255), (self.dino_rect.centerx, self.dino_rect.centery), 40, 3)
+            pygame.draw.circle(
+                SCREEN,
+                (0, 0, 255),
+                (self.dino_rect.centerx, self.dino_rect.centery),
+                40,
+                3,
+            )
             # Or add a timer bar (optional)
+
 
 class Cloud:
     def __init__(self):
@@ -245,9 +255,9 @@ def main():
         if points % 100 == 0:  # Örnek: her 100 puanda bir ses çal
             SCORE_CHANNEL.play(SCORE_SOUND)
 
-
-
-        text = font.render("Points: " + str(points), True, environment.cycle.get_text_color())
+        text = font.render(
+            "Points: " + str(points), True, environment.cycle.get_text_color()
+        )
         textRect = text.get_rect()
         textRect.center = (1000, 40)
         SCREEN.blit(text, textRect)
@@ -276,11 +286,11 @@ def main():
 
         # Update day/night cycle based on points
         environment.update(points)
-        
+
         # Fill screen with day/night color
         bg_color = environment.get_bg_color()
         SCREEN.fill(bg_color)
-        
+
         userInput = pygame.key.get_pressed()
 
         player.draw(SCREEN)
@@ -303,7 +313,7 @@ def main():
             obstacle.update()
 
             if player.dino_rect.colliderect(obstacle.rect):
-                COLLISION_CHANNEL.play(COLLISION_SOUND) # Hit sound
+                COLLISION_CHANNEL.play(COLLISION_SOUND)  # Hit sound
                 if shield_active:
                     # Shield protects player once, remove obstacle and shield
                     obstacles.remove(obstacle)
@@ -322,7 +332,7 @@ def main():
                 SCREEN_WIDTH + random.randint(500, 1000),
                 random.randint(250, 350),
                 SHIELD_IMG.get_width(),
-                SHIELD_IMG.get_height()
+                SHIELD_IMG.get_height(),
             )
             shield_spawn_timer = 0
 
@@ -361,7 +371,6 @@ def main():
 
         clock.tick(30)
         pygame.display.update()
-
 
 
 def menu(death_count):

@@ -1,8 +1,10 @@
-import pygame
-import random
 import os
+import random
+
+import pygame
 
 SHIELD_IMAGE = pygame.image.load(os.path.join("Assets/Other", "Shield.png"))
+
 
 class ShieldPowerUp:
     def __init__(self):
