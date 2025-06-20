@@ -216,7 +216,7 @@ class LargeCactus(Obstacle):
 class Bird(Obstacle):
     def __init__(self, image):
         self.type = 0
-        super().__init__(image, self.type, 250)
+        super().__init__(image, self.type, random.choice([230, 280]))
         self.collision_rect = self.rect.inflate(-30, -20)
         self.index = 0
 
@@ -262,7 +262,7 @@ def main():
             SCORE_CHANNEL.play(SCORE_SOUND)
 
         text = font.render(
-            "Points: " + str(points), True, environment.cycle.get_text_color()
+            f"Points: {int(points)}", True, environment.cycle.get_text_color()
         )
         textRect = text.get_rect()
         textRect.center = (1000, 40)
@@ -282,7 +282,9 @@ def main():
         # Draw a simple shield icon at top-left or near player
         SCREEN.blit(SHIELD_IMG, (player.dino_rect.x, player.dino_rect.y - 40))
         # Optional: Draw a timer bar or countdown text
-        timer_text = font.render(f"Shield: {shield_timer // 30}", True, (0, 0, 255))
+        timer_text = font.render(
+            f"Shield: {shield_timer // 30}", True, environment.cycle.get_text_color()
+        )
         SCREEN.blit(timer_text, (player.dino_rect.x, player.dino_rect.y - 60))
 
     while run:
