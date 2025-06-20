@@ -6,11 +6,11 @@ pygame.mixer.init()  # Ses sistemini başlatır
 pygame.mixer.set_num_channels(3)  # 3 farklı kanal: jump, collision, score
 
 # Load Sound Effects
-JUMP_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\jump.wav")
+JUMP_SOUND = pygame.mixer.Sound("Assets/Sound/jump.wav")
 JUMP_SOUND.set_volume(0.5)  # Zıplama sesi: orta ses düzeyi
-COLLISION_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\collision.wav")
+COLLISION_SOUND = pygame.mixer.Sound("Assets/Sound/collision.wav")
 COLLISION_SOUND.set_volume(0.7)  # Çarpma sesi: biraz daha yüksek
-SCORE_SOUND = pygame.mixer.Sound(r"C:\Users\dilae\Desktop\dino-game\Assets\Sound\score.wav")
+SCORE_SOUND = pygame.mixer.Sound("Assets/Sound/score.wav")
 SCORE_SOUND.set_volume(0.3)  # Puan sesi: hafif ve melodik
 JUMP_CHANNEL = pygame.mixer.Channel(0)
 COLLISION_CHANNEL = pygame.mixer.Channel(1)
