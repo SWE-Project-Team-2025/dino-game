@@ -34,20 +34,6 @@ class DayNightCycle:
         
         return (r, g, b)
     
-    def get_current_time(self):
-        # Calculate the current hour based on cycle position
-        current_hour = (self.start_hour + self.cycle_position * HOURS_PER_CYCLE) % HOURS_PER_CYCLE
-        hour = int(current_hour)
-        minute = int((current_hour - hour) * 60)
-        
-        # Return formatted time string
-        am_pm = "AM" if hour < 12 else "PM"
-        hour_12 = hour if hour <= 12 else hour - 12
-        if hour_12 == 0:
-            hour_12 = 12
-            
-        return f"{hour_12:02d}:{minute:02d} {am_pm}"
-    
     def is_night(self):
         # Return true if it's night time (6 PM to 6 AM)
         current_hour = (self.start_hour + self.cycle_position * HOURS_PER_CYCLE) % HOURS_PER_CYCLE
