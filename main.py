@@ -1,6 +1,7 @@
 import os
 import random
-
+import math
+from day_night import DayNightEnvironment
 import pygame
 
 pygame.init()
@@ -51,7 +52,6 @@ BIRD = [
 ]
 
 CLOUD = pygame.image.load(os.path.join("Assets/Other", "Cloud.png"))
-
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
 
 
@@ -197,6 +197,7 @@ def main():
     clock = pygame.time.Clock()
     player = Dinosaur()
     cloud = Cloud()
+    environment = DayNightEnvironment(SCREEN_WIDTH, SCREEN_HEIGHT)
     game_speed = 20
     x_pos_bg = 0
     y_pos_bg = 380
@@ -235,7 +236,13 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        SCREEN.fill((255, 255, 255))
+        # Update day/night cycle based on points
+        environment.update(points)
+        
+        # Fill screen with day/night color
+        bg_color = environment.get_bg_color()
+        SCREEN.fill(bg_color)
+        
         userInput = pygame.key.get_pressed()
 
         player.draw(SCREEN)
@@ -263,6 +270,9 @@ def main():
 
         cloud.draw(SCREEN)
         cloud.update()
+
+        # Draw day/night environment
+        environment.draw(SCREEN, font)
 
         score()
 
