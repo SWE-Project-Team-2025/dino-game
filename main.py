@@ -1,6 +1,8 @@
-import pygame
 import os
 import random
+
+import pygame
+
 pygame.init()
 pygame.mixer.init()  # Ses sistemini başlatır
 pygame.mixer.set_num_channels(3)  # 3 farklı kanal: jump, collision, score
@@ -22,21 +24,31 @@ SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 1100
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-RUNNING = [pygame.image.load(os.path.join("Assets/Dino", "DinoRun1.png")),
-           pygame.image.load(os.path.join("Assets/Dino", "DinoRun2.png"))]
+RUNNING = [
+    pygame.image.load(os.path.join("Assets/Dino", "DinoRun1.png")),
+    pygame.image.load(os.path.join("Assets/Dino", "DinoRun2.png")),
+]
 JUMPING = pygame.image.load(os.path.join("Assets/Dino", "DinoJump.png"))
-DUCKING = [pygame.image.load(os.path.join("Assets/Dino", "DinoDuck1.png")),
-           pygame.image.load(os.path.join("Assets/Dino", "DinoDuck2.png"))]
+DUCKING = [
+    pygame.image.load(os.path.join("Assets/Dino", "DinoDuck1.png")),
+    pygame.image.load(os.path.join("Assets/Dino", "DinoDuck2.png")),
+]
 
-SMALL_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus1.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus2.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus3.png"))]
-LARGE_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus1.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus2.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus3.png"))]
+SMALL_CACTUS = [
+    pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus1.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus2.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus3.png")),
+]
+LARGE_CACTUS = [
+    pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus1.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus2.png")),
+    pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus3.png")),
+]
 
-BIRD = [pygame.image.load(os.path.join("Assets/Bird", "Bird1.png")),
-        pygame.image.load(os.path.join("Assets/Bird", "Bird2.png"))]
+BIRD = [
+    pygame.image.load(os.path.join("Assets/Bird", "Bird1.png")),
+    pygame.image.load(os.path.join("Assets/Bird", "Bird2.png")),
+]
 
 CLOUD = pygame.image.load(os.path.join("Assets/Other", "Cloud.png"))
 
@@ -110,7 +122,7 @@ class Dinosaur:
         
             self.dino_rect.y -= self.jump_vel * 4
             self.jump_vel -= 0.8
-        if self.jump_vel < - self.JUMP_VEL:
+        if self.jump_vel < -self.JUMP_VEL:
             self.dino_jump = False
             self.jump_vel = self.JUMP_VEL
 
@@ -175,7 +187,7 @@ class Bird(Obstacle):
     def draw(self, SCREEN):
         if self.index >= 9:
             self.index = 0
-        SCREEN.blit(self.image[self.index//5], self.rect)
+        SCREEN.blit(self.image[self.index // 5], self.rect)
         self.index += 1
 
 
@@ -189,7 +201,7 @@ def main():
     x_pos_bg = 0
     y_pos_bg = 380
     points = 0
-    font = pygame.font.Font('freesansbold.ttf', 20)
+    font = pygame.font.Font("freesansbold.ttf", 20)
     obstacles = []
     death_count = 0
 
@@ -263,7 +275,7 @@ def menu(death_count):
     run = True
     while run:
         SCREEN.fill((255, 255, 255))
-        font = pygame.font.Font('freesansbold.ttf', 30)
+        font = pygame.font.Font("freesansbold.ttf", 30)
 
         if death_count == 0:
             text = font.render("Press any Key to Start", True, (0, 0, 0))
