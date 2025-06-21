@@ -327,7 +327,6 @@ def main():
 
         player.draw(SCREEN)
         player.draw_shield_indicator(SCREEN)
-        player.power_up_state.draw_powerup_indicators(SCREEN, player.dino_rect)
         player.update(userInput)
 
         # Spawn obstacles if none present
