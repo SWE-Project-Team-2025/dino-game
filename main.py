@@ -20,6 +20,9 @@ JUMP_CHANNEL = pygame.mixer.Channel(0)
 COLLISION_CHANNEL = pygame.mixer.Channel(1)
 SCORE_CHANNEL = pygame.mixer.Channel(2)
 
+# Game state
+paused = False
+PAUSE_ICON = pygame.image.load(os.path.join("Assets/Other", "Pause.png"))
 
 # Global Constants
 SCREEN_HEIGHT = 600
@@ -227,7 +230,7 @@ class Bird(Obstacle):
 
 
 def main():
-    global game_speed, x_pos_bg, y_pos_bg, points, obstacles, death_count
+    global game_speed, x_pos_bg, y_pos_bg, points, obstacles, death_count, paused
     run = True
     clock = pygame.time.Clock()
     player = Dinosaur()
@@ -291,6 +294,19 @@ def main():
                 run = False
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                    paused = not paused
+
+        if paused:
+            if PAUSE_ICON:
+                pause_icon_rect = PAUSE_ICON.get_rect(
+                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+                )
+                SCREEN.blit(PAUSE_ICON, pause_icon_rect)
+            pygame.display.update()
+            clock.tick(30)
+            continue
 
         # Update day/night cycle based on points
         environment.update(points)
