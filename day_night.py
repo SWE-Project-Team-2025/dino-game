@@ -21,8 +21,7 @@ class DayNightCycle:
 
     def update(self, points):
         # Update cycle position based on points
-        if points % (CYCLE_LENGTH / 2) == 0 and points != 0:
-            self.cycle_position = (points % CYCLE_LENGTH) / CYCLE_LENGTH
+        self.cycle_position = ((points // (CYCLE_LENGTH / 2)) % 2) * 0.5
         self.cycle_movement = (points % CYCLE_LENGTH) / CYCLE_LENGTH
 
     def get_current_color(self):
