@@ -2,6 +2,7 @@ import os
 import random
 
 import pygame
+from power_ups import PowerUpManager, PowerUpState
 
 from day_night import DayNightEnvironment
 
@@ -23,6 +24,9 @@ SCORE_CHANNEL = pygame.mixer.Channel(2)
 # Game state
 paused = False
 PAUSE_ICON = pygame.image.load(os.path.join("Assets/Other", "Pause.png"))
+
+# Game Configuration
+TESTING_MODE = False  # Set to False for production
 
 # Global Constants
 SCREEN_HEIGHT = 600
@@ -81,6 +85,7 @@ class Dinosaur:
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS
         self.collision_rect = self.dino_rect.inflate(-50, -50)
+        self.power_up_state = PowerUpState()
 
         self.has_shield = False
         self.shield_timer = 0  # counts down in frames or seconds
@@ -112,6 +117,7 @@ class Dinosaur:
             self.dino_jump = False
             # Call the shield update function here
         self.update_shield()
+        self.power_up_state.update()
 
     def duck(self):
         self.image = self.duck_img[self.step_index // 5]
@@ -236,6 +242,9 @@ def main():
     player = Dinosaur()
     cloud = Cloud()
     environment = DayNightEnvironment(SCREEN_WIDTH, SCREEN_HEIGHT)
+    power_up_manager = PowerUpManager(
+        testing_mode=TESTING_MODE, screen_width=SCREEN_WIDTH
+    )
     game_speed = 20
     x_pos_bg = 0
     y_pos_bg = 380
@@ -243,6 +252,7 @@ def main():
     environment.update(points)
     font = pygame.font.Font("freesansbold.ttf", 20)
     obstacles = []
+    enable_powerups = True  # Set to False to disable powerups for testing
 
     # Shield variables
     shield_active = False
@@ -256,8 +266,7 @@ def main():
 
     def score():
         global points, game_speed
-        points += 1
-
+        points += player.power_up_state.score_multiplier
         if int(points) % 100 == 0 and int(points) != 0:
             SCORE_CHANNEL.play(SCORE_SOUND)
             game_speed += 1
@@ -268,6 +277,17 @@ def main():
         textRect = text.get_rect()
         textRect.center = (1000, 40)
         SCREEN.blit(text, textRect)
+
+        if player.power_up_state.score_multiplier > 1:
+            multiplier_text = font.render(
+                f"{player.power_up_state.score_multiplier}x Score: {
+                    player.power_up_state.multiplier_timer // 30}s",
+                True,
+                (255, 0, 0),
+            )
+            multiplier_text_rect = multiplier_text.get_rect()
+            multiplier_text_rect.topleft = (textRect.left, textRect.bottom + 10)
+            SCREEN.blit(multiplier_text, multiplier_text_rect)
 
     def background():
         global x_pos_bg, y_pos_bg
@@ -384,6 +404,16 @@ def main():
                 shield_active = False
                 shield_timer = 0
 
+        if enable_powerups:
+            power_up_manager.update(game_speed, obstacles)
+            power_up_manager.draw_all(SCREEN)
+
+            # Check for power-up collisions
+            collected_power_ups = power_up_manager.check_collisions(player.dino_rect)
+            for power_up in collected_power_ups:
+                if power_up.type == "multiplier":
+                    player.power_up_state.activate_multiplier()
+
         background()
 
         cloud.draw(SCREEN)
@@ -425,6 +455,7 @@ def menu():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 run = False
+                quit()
             if event.type == pygame.KEYDOWN:
                 main()
                 break
