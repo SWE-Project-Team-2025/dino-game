@@ -2,12 +2,9 @@ import os
 import random
 
 import pygame
+from power_ups import PowerUpManager, PowerUpState
 
 from day_night import DayNightEnvironment
-from power_ups import (
-    PowerUpState,
-    PowerUpManager,
-)
 
 pygame.init()
 pygame.mixer.init()  # Ses sistemini başlatır
@@ -252,7 +249,6 @@ def main():
     environment.update(points)
     font = pygame.font.Font("freesansbold.ttf", 20)
     obstacles = []
-    death_count = 0
     enable_powerups = True  # Set to False to disable powerups for testing
 
     # Shield variables
@@ -268,13 +264,12 @@ def main():
     def score():
         global points, game_speed
         points += player.power_up_state.score_multiplier
-        if points % 100 == 0:
-            game_speed += 1
-        if points % 100 == 0:
+        if int(points) % 100 == 0 and int(points) != 0:
             SCORE_CHANNEL.play(SCORE_SOUND)
+            game_speed += 1
 
         text = font.render(
-            "Points: " + str(int(points)), True, environment.cycle.get_text_color()
+            f"Points: {int(points)}", True, environment.cycle.get_text_color()
         )
         textRect = text.get_rect()
         textRect.center = (1000, 40)
@@ -282,7 +277,8 @@ def main():
 
         if player.power_up_state.score_multiplier > 1:
             multiplier_text = font.render(
-                f"{player.power_up_state.score_multiplier}x Score: {player.power_up_state.multiplier_timer // 30}s",
+                f"{player.power_up_state.score_multiplier}x Score: {
+                    player.power_up_state.multiplier_timer // 30}s",
                 True,
                 (255, 0, 0),
             )
@@ -345,16 +341,17 @@ def main():
             obstacle.update()
 
             if player.collision_rect.colliderect(obstacle.collision_rect):
+                COLLISION_CHANNEL.play(COLLISION_SOUND)  # Hit sound
                 if shield_active:
                     # Shield protects player once, remove obstacle and shield
                     obstacles.remove(obstacle)
                     shield_active = False
                     shield_timer = 0
                 else:
-                    COLLISION_CHANNEL.play(COLLISION_SOUND)
-                    pygame.time.delay(2000)
+                    points = int(points)
+                    pygame.time.delay(800)
                     death_count += 1
-                    menu(death_count)
+                    return
 
         # Shield power-up spawn logic (every ~10-20 seconds)
         shield_spawn_timer += 1
@@ -418,8 +415,8 @@ def main():
 death_count = 0
 
 
-def menu(death_count=0):
-    global points
+def menu():
+    global points, death_count
     run = True
     while run:
         SCREEN.fill((255, 255, 255))
@@ -442,10 +439,10 @@ def menu(death_count=0):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 run = False
-                exit()
+                quit()
             if event.type == pygame.KEYDOWN:
                 main()
                 break
 
 
-menu(death_count=0)
+menu()
