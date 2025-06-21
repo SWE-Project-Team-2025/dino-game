@@ -230,7 +230,7 @@ class Bird(Obstacle):
 
 
 def main():
-    global game_speed, x_pos_bg, y_pos_bg, points, obstacles, paused
+    global game_speed, x_pos_bg, y_pos_bg, points, obstacles, death_count, paused
     run = True
     clock = pygame.time.Clock()
     player = Dinosaur()
@@ -243,7 +243,6 @@ def main():
     environment.update(points)
     font = pygame.font.Font("freesansbold.ttf", 20)
     obstacles = []
-    death_count = 0
 
     # Shield variables
     shield_active = False
@@ -258,10 +257,10 @@ def main():
     def score():
         global points, game_speed
         points += 1
-        if points % 100 == 0:
-            game_speed += 1
-        if points % 100 == 0:  # Örnek: her 100 puanda bir ses çal
+
+        if int(points) % 100 == 0 and int(points) != 0:
             SCORE_CHANNEL.play(SCORE_SOUND)
+            game_speed += 1
 
         text = font.render(
             f"Points: {int(points)}", True, environment.cycle.get_text_color()
@@ -293,6 +292,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+                pygame.quit()
+                quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
                     paused = not paused
@@ -307,15 +308,14 @@ def main():
             clock.tick(30)
             continue
 
-        # All game logic below runs only if not paused
-        userInput = pygame.key.get_pressed()
-
         # Update day/night cycle based on points
         environment.update(points)
 
         # Fill screen with day/night color
         bg_color = environment.get_bg_color()
         SCREEN.fill(bg_color)
+
+        userInput = pygame.key.get_pressed()
 
         player.draw(SCREEN)
         player.draw_shield_indicator(SCREEN)
@@ -344,9 +344,10 @@ def main():
                     shield_active = False
                     shield_timer = 0
                 else:
+                    points = int(points)
                     pygame.time.delay(800)
                     death_count += 1
-                    menu(death_count)
+                    return
 
         # Shield power-up spawn logic (every ~10-20 seconds)
         shield_spawn_timer += 1
@@ -397,8 +398,11 @@ def main():
         pygame.display.update()
 
 
-def menu(death_count):
-    global points
+death_count = 0
+
+
+def menu():
+    global points, death_count
     run = True
     while run:
         SCREEN.fill((255, 255, 255))
@@ -423,6 +427,7 @@ def menu(death_count):
                 run = False
             if event.type == pygame.KEYDOWN:
                 main()
+                break
 
 
-menu(death_count=0)
+menu()
